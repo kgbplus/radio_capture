@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.manifest
+*.spec
+*.log
+*.pot
+*.mo
+*.cover
+.coverage
+.cache
+.tox/
+.nox/
+.pytest_cache/
+.pyre/
+.mypy_cache/
+.dmypy.json
+.pytype/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Test output
+htmlcov/
+
+# Database
+*.sqlite3
+*.db
+
+# Alembic
+alembic/versions/*.pyc
+
+# Data directory
+data/
