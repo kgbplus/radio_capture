@@ -55,3 +55,6 @@ alembic/versions/*.pyc
 
 # Data directory
 data/
+
+# Pycharm
+.idea/
