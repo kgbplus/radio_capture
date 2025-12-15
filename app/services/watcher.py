@@ -10,6 +10,7 @@ from app.core.db import engine
 from app.models.models import Recording, Stream
 
 logger = logging.getLogger(__name__)
+DEFAULT_RETENTION_DAYS = 3
 
 class RecordingWatcher:
     def __init__(self):
@@ -113,7 +114,7 @@ class RecordingWatcher:
 
     async def maybe_cleanup_old_recordings(self):
         """
-        Periodically purge recordings older than 3 days from disk and mark them deleted in DB.
+        Periodically purge recordings past their retention period (default 3 days) and mark them deleted in DB.
         """
         now = datetime.utcnow()
         # Run cleanup at most once per hour to limit disk churn
@@ -124,33 +125,71 @@ class RecordingWatcher:
         self._last_cleanup = now
 
     def cleanup_old_recordings(self):
-        cutoff = datetime.utcnow() - timedelta(days=3)
+        utc_now = datetime.utcnow()
         with Session(engine) as session:
-            old_recordings = session.exec(
-                select(Recording)
-                .where(Recording.start_ts < cutoff, Recording.status != "deleted")
-                .order_by(Recording.start_ts)
-                .limit(500)
-            ).all()
+            streams = session.exec(select(Stream)).all()
 
-            if not old_recordings:
-                return
+            for stream in streams:
+                retention_days = self._resolve_retention_days(stream)
+                if retention_days == 0:
+                    continue
 
-            logger.info(f"Cleaning up {len(old_recordings)} old recordings.")
+                cutoff = utc_now - timedelta(days=retention_days)
+                old_recordings = session.exec(
+                    select(Recording)
+                    .where(
+                        Recording.stream_id == stream.id,
+                        Recording.start_ts < cutoff,
+                        Recording.status != "deleted"
+                    )
+                    .order_by(Recording.start_ts)
+                    .limit(500)
+                ).all()
 
-            for recording in old_recordings:
-                try:
-                    if recording.path and os.path.exists(recording.path):
-                        os.remove(recording.path)
-                        logger.info(f"Deleted old recording file {recording.path}")
-                    elif recording.path:
-                        logger.warning(f"Recording file already missing: {recording.path}")
+                if not old_recordings:
+                    continue
 
-                    recording.status = "deleted"
-                    session.add(recording)
-                    session.commit()
-                except Exception as e:
-                    session.rollback()
-                    logger.error(f"Failed to delete recording {recording.id}: {e}")
+                logger.info(
+                    f"Cleaning up {len(old_recordings)} recordings for stream {stream.name} "
+                    f"older than {retention_days} day(s)."
+                )
+
+                for recording in old_recordings:
+                    try:
+                        if recording.path and os.path.exists(recording.path):
+                            os.remove(recording.path)
+                            logger.info(f"Deleted old recording file {recording.path}")
+                        elif recording.path:
+                            logger.warning(f"Recording file already missing: {recording.path}")
+
+                        recording.status = "deleted"
+                        session.add(recording)
+                        session.commit()
+                    except Exception as e:
+                        session.rollback()
+                        logger.error(f"Failed to delete recording {recording.id}: {e}")
+
+    def _resolve_retention_days(self, stream: Stream) -> int:
+        params = stream.optional_params or {}
+        raw_value = params.get("retention_days", DEFAULT_RETENTION_DAYS)
+        try:
+            days = int(raw_value)
+        except (TypeError, ValueError):
+            logger.warning(
+                "Invalid retention_days '%s' for stream %s. Falling back to %s days.",
+                raw_value,
+                stream.name,
+                DEFAULT_RETENTION_DAYS,
+            )
+            return DEFAULT_RETENTION_DAYS
+
+        if days <= 0:
+            logger.debug(
+                "Retention disabled for stream %s because retention_days=%s",
+                stream.name,
+                raw_value,
+            )
+            return 0
+        return days
 
 watcher = RecordingWatcher()
