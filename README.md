@@ -76,12 +76,12 @@ Streams are configured via the web UI with the following parameters:
 
 **Optional Parameters:**
 - `bitrate`: Audio bitrate (e.g., `128k`)
-- `retention_days`: Days to keep recordings (default: 30)
+- `retention_days`: Days to keep recordings (default: 3)
 - `retry_delay`: Seconds to wait before retry on error
 
 ### Recording Retention
 
-Recordings older than **3 days** are automatically purged from disk by the background watcher. Their database entries remain for historical/statistical use but are marked with a `deleted` status so they no longer appear in file listings or downloads. This keeps storage healthy without losing high-level metadata.
+By default, each stream's recordings are purged after **3 days**, but you can override the retention window per stream through the `retention_days` optional parameter. Setting the value to `0` (or any non-positive number) disables automatic deletion for that stream. Deleted recordings have their database entries retained for historical/statistical use but are marked with a `deleted` status so they no longer appear in file listings or downloads. This keeps storage healthy without losing high-level metadata.
 
 ## Project Structure
 
