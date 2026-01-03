@@ -16,7 +16,7 @@ jobs:
       contents: read
       packages: write
     env:
-      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/radio-capture:latest
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner_lowercase }}/radio-capture:latest
       GHCR_USERNAME: ${{ github.repository_owner }}
       GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
