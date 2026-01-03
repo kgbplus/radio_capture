@@ -15,13 +15,15 @@ jobs:
     permissions:
       contents: read
       packages: write
-    env:
-      IMAGE_NAME: ghcr.io/${{ github.repository_owner_lowercase }}/radio-capture:latest
-      GHCR_USERNAME: ${{ github.repository_owner }}
-      GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Set environment variables
+        run: |
+          echo "IMAGE_NAME=ghcr.io/$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')/radio-capture:latest" >> $GITHUB_ENV
+          echo "GHCR_USERNAME=${{ github.repository_owner }}" >> $GITHUB_ENV
+          echo "GHCR_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
