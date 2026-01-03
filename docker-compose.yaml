@@ -1,13 +1,12 @@
 services:
   radio:
-    build: .
+    image: ${IMAGE_NAME:-radio-capture:latest}
     container_name: radio-capture
     restart: unless-stopped
     environment:
       - SECRET_KEY
-      - DATA_DIR
       - DATABASE_URL
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/data
+      - ${DATA_DIR:-./data}:/data

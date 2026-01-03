@@ -25,7 +25,6 @@ COPY . .
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV DATA_DIR=/data
 
 # Make entrypoint executable
 RUN chmod +x start.sh
